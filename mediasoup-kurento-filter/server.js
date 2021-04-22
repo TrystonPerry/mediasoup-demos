@@ -1045,23 +1045,28 @@ async function startKurentoFilter() {
   const recvEndpoint = global.kurento.rtp.recvEndpoint;
   const sendEndpoint = global.kurento.rtp.sendEndpoint;
 
-  const filter = await kmsPipeline.create("GStreamerFilter", {
-    command: "videobalance saturation=0.0",
-  });
-  global.kurento.filter = filter;
-
   const kmsComposite = await kmsPipeline.create("Composite");
   const hubPort = await kmsComposite.createHubPort();
   await recvEndpoint.connect(hubPort);
   await hubPort.connect(sendEndpoint);
+
   setTimeout(async () => {
     const hubPort2 = await kmsComposite.createHubPort();
     await recvEndpoint.connect(hubPort2);
     await hubPort2.connect(sendEndpoint);
   }, 3000);
 
-  // await recvEndpoint.connect(filter);
-  // await filter.connect(sendEndpoint);
+  const recorder = await kmsPipeline.create("RecorderEndpoint", {
+    uri:
+      "file:///mnt/c/Repositories/mediasoup-demos/mediasoup-kurento-filter/videos/call.webm",
+  });
+
+  recorder.record();
+  setTimeout(() => {
+    console.log("stop recording");
+    recorder.stop();
+  }, 6000);
+  console.log(recorder);
 }
 
 // ----------------------------------------------------------------------------
