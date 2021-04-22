@@ -63,6 +63,7 @@ const global = {
   kurento: {
     client: null,
     pipeline: null,
+    composite: null,
     filter: null,
 
     // RTP connection with mediasoup
@@ -439,6 +440,7 @@ async function startKurento() {
   log("[startKurento] Kurento client connected");
 
   const kmsPipeline = await kmsClient.create("MediaPipeline");
+
   global.kurento.pipeline = kmsPipeline;
   log("[startKurento] Kurento pipeline created");
 }
@@ -1048,8 +1050,18 @@ async function startKurentoFilter() {
   });
   global.kurento.filter = filter;
 
-  await recvEndpoint.connect(filter);
-  await filter.connect(sendEndpoint);
+  const kmsComposite = await kmsPipeline.create("Composite");
+  const hubPort = await kmsComposite.createHubPort();
+  await recvEndpoint.connect(hubPort);
+  await hubPort.connect(sendEndpoint);
+  setTimeout(async () => {
+    const hubPort2 = await kmsComposite.createHubPort();
+    await recvEndpoint.connect(hubPort2);
+    await hubPort2.connect(sendEndpoint);
+  }, 3000);
+
+  // await recvEndpoint.connect(filter);
+  // await filter.connect(sendEndpoint);
 }
 
 // ----------------------------------------------------------------------------
